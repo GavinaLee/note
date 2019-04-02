@@ -1,0 +1,27 @@
+public List<BasicDBObject> getCountTimes(String tenant_id, Long times, Long times2, Boolean sigin, String option,
+			String phone) {
+		Aggregation aggregation = null;
+		Criteria criteria = Criteria.where("tenant_id").is(tenant_id).and("dr").is(CommonStatus.saveStatus.toString());
+		if (sigin) {// 获取签到次数
+			criteria.andOperator(Criteria.where("sign_in").is(true));
+		}
+		if (!StrUtils.isNullOrEmpty(phone)) {
+			criteria.andOperator(Criteria.where("phone_num").is(phone));
+		}
+		GroupOperation group = Aggregation.group("phone_num").count().as("times");
+
+		MatchOperation timeMatch = Aggregation.match(timeMatch(option, times, times2));
+
+		aggregation = Aggregation.newAggregation(Aggregation.match(criteria), group, timeMatch);
+
+		AggregationResults<BasicDBObject> ar = mongoTemplate.aggregate(aggregation, COLLETIONNAME, BasicDBObject.class);
+//		int i = 0;
+//		for (Iterator<BasicDBObject> iterator = ar.iterator(); iterator.hasNext();) {
+//			DBObject obj = iterator.next();
+//			i++;
+//			if (obj.get("_id") != null) {
+//				System.out.println("第" + i + "个;" + obj.get("_id").toString());
+//			}
+//		}
+		return ar.getMappedResults();
+	}
